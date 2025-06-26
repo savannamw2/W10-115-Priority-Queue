@@ -135,8 +135,11 @@ namespace custom
    template <class T, class Container, class Compare>
    const T &priority_queue<T, Container, Compare>::top() const
    {
+      // check empty first
       if (container.empty())
          throw std::out_of_range("std:out_of_range");
+
+      // return element in the front of the container
       return container.front();
    }
 
@@ -147,6 +150,16 @@ namespace custom
    template <class T, class Container, class Compare>
    void priority_queue<T, Container, Compare>::pop()
    {
+      if (container.empty())
+         return;
+
+      // Move the last element to the root
+      container[0] = std::move(container.back());
+      container.pop_back();
+
+      // If there are still elements, percolate down from the root
+      if (!container.empty())
+         percolateDown(0);
    }
 
    /*****************************************
@@ -156,10 +169,38 @@ namespace custom
    template <class T, class Container, class Compare>
    void priority_queue<T, Container, Compare>::push(const T &t)
    {
+      container.push_back(t);
+      // Percolate up the new element
+      size_t index = container.size() - 1;
+      while (index > 0)
+      {
+         size_t parent = (index - 1) / 2;
+         if (compare(container[parent], container[index]))
+         {
+            std::swap(container[parent], container[index]);
+            index = parent;
+         }
+         else
+            break;
+      }
    }
    template <class T, class Container, class Compare>
    void priority_queue<T, Container, Compare>::push(T &&t)
    {
+      container.push_back(std::move(t));
+      // Percolate up the new element
+      size_t index = container.size() - 1;
+      while (index > 0)
+      {
+         size_t parent = (index - 1) / 2;
+         if (compare(container[parent], container[index]))
+         {
+            std::swap(container[parent], container[index]);
+            index = parent;
+         }
+         else
+            break;
+      }
    }
 
    /************************************************
@@ -171,45 +212,33 @@ namespace custom
    template <class T, class Container, class Compare>
    bool priority_queue<T, Container, Compare>::percolateDown(size_t indexHeap)
    {
-      //make sure the index is valid
-      if (indexHeap >= container.size())
-      {
-         return false; // nothing to do
-      }
-      //if the index is a leaf, nothing to do
-      if (indexHeap * 2 >= container.size() || indexHeap * 2 + 1 >= container.size())
-      {
-         return false; // nothing to do
-      }
-      //find the left child and the right child of index
-      size_t indexLeft = indexHeap * 2;
-      size_t indexRight = indexLeft + 1;
+      bool swapped = false;
 
-      //find which child is bigger, the left child or the right child?
-      size_t indexBigger = indexHeap;
-      if (indexRight <= container.size() && container[indexLeft] < container[indexRight])
+      while (true)
       {
-         indexBigger = indexRight;
+         size_t largest = indexHeap;
+         size_t left = indexHeap * 2 + 1;  // Left child
+         size_t right = indexHeap * 2 + 2; // Right child
+
+         // Check if left child exists and is larger
+         if (left < container.size() && compare(container[largest], container[left]))
+            largest = left;
+
+         // Check if right child exists and is larger
+         if (right < container.size() && compare(container[largest], container[right]))
+            largest = right;
+
+         // If largest is still the parent, we're done
+         if (largest == indexHeap)
+            break;
+
+         // Swap with the larger child
+         std::swap(container[indexHeap], container[largest]);
+         swapped = true;
+         indexHeap = largest; // Move down to the child
       }
-      else
-      {
-         indexBigger = indexLeft;
-      }
-      
-      //if the bigger child is greater than the parent, swap them
-      if (container[indexHeap] < container[indexBigger])
-      {
-         //swap the parent and the bigger child
-         auto temp = container[indexHeap];
-         container[indexHeap] = container[indexBigger];
-         container[indexBigger] = temp;
-         //recursively call percolateDown on the bigger child
-         return true;
-      }
-      else
-      {
-         return false;
-      }
+
+      return swapped;
    }
 
    /************************************************
@@ -219,6 +248,10 @@ namespace custom
    template <class T, class Container, class Compare>
    void priority_queue<T, Container, Compare>::heapify()
    {
+      for (size_t i = container.size() / 2; i > 0; --i)
+      {
+         percolateDown(i - 1); // Convert to 0-based indexing
+      }
    }
 
    /************************************************
@@ -229,6 +262,9 @@ namespace custom
    inline void swap(custom::priority_queue<T, Container, Compare> &lhs,
                     custom::priority_queue<T, Container, Compare> &rhs)
    {
+      using std::swap;
+      swap(lhs.container, rhs.container);
+      swap(lhs.compare, rhs.compare);
    }
 
 };
