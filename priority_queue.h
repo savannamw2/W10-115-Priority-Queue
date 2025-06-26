@@ -171,7 +171,45 @@ namespace custom
    template <class T, class Container, class Compare>
    bool priority_queue<T, Container, Compare>::percolateDown(size_t indexHeap)
    {
-      return false;
+      //make sure the index is valid
+      if (indexHeap >= container.size())
+      {
+         return false; // nothing to do
+      }
+      //if the index is a leaf, nothing to do
+      if (indexHeap * 2 >= container.size() || indexHeap * 2 + 1 >= container.size())
+      {
+         return false; // nothing to do
+      }
+      //find the left child and the right child of index
+      size_t indexLeft = indexHeap * 2;
+      size_t indexRight = indexLeft + 1;
+
+      //find which child is bigger, the left child or the right child?
+      size_t indexBigger = indexHeap;
+      if (indexRight <= container.size() && container[indexLeft] < container[indexRight])
+      {
+         indexBigger = indexRight;
+      }
+      else
+      {
+         indexBigger = indexLeft;
+      }
+      
+      //if the bigger child is greater than the parent, swap them
+      if (container[indexHeap] < container[indexBigger])
+      {
+         //swap the parent and the bigger child
+         auto temp = container[indexHeap];
+         container[indexHeap] = container[indexBigger];
+         container[indexBigger] = temp;
+         //recursively call percolateDown on the bigger child
+         return true;
+      }
+      else
+      {
+         return false;
+      }
    }
 
    /************************************************
